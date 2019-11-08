@@ -9,7 +9,7 @@ world = World()
 
 # You may uncomment the smaller graphs for development and testing purposes.
 
-# roomGraph={0: [(3, 5), {'n': 1}], 1: [(3, 6), {'s': 0, 'n': 2}], 2: [(3, 7), {'s': 1}]}
+#roomGraph={0: [(3, 5), {'n': 1}], 1: [(3, 6), {'s': 0, 'n': 2}], 2: [(3, 7), {'s': 1}]}
 # roomGraph={0: [(3, 5), {'n': 1, 's': 5, 'e': 3, 'w': 7}], 1: [(3, 6), {'s': 0, 'n': 2}], 2: [(3, 7), {'s': 1}], 3: [(4, 5), {'w': 0, 'e': 4}], 4: [(5, 5), {'w': 3}], 5: [(3, 4), {'n': 0, 's': 6}], 6: [(3, 3), {'n': 5}], 7: [(2, 5), {'w': 8, 'e': 0}], 8: [(1, 5), {'e': 7}]}
 # roomGraph={0: [(3, 5), {'n': 1, 's': 5, 'e': 3, 'w': 7}], 1: [(3, 6), {'s': 0, 'n': 2}], 2: [(3, 7), {'s': 1}], 3: [(4, 5), {'w': 0, 'e': 4}], 4: [(5, 5), {'w': 3}], 5: [(3, 4), {'n': 0, 's': 6}], 6: [(3, 3), {'n': 5, 'w': 11}], 7: [(2, 5), {'w': 8, 'e': 0}], 8: [(1, 5), {'e': 7}], 9: [(1, 4), {'n': 8, 's': 10}], 10: [(1, 3), {'n': 9, 'e': 11}], 11: [(2, 3), {'w': 10, 'e': 6}]}
 # roomGraph={0: [(3, 5), {'n': 1, 's': 5, 'e': 3, 'w': 7}], 1: [(3, 6), {'s': 0, 'n': 2, 'e': 12, 'w': 15}], 2: [(3, 7), {'s': 1}], 3: [(4, 5), {'w': 0, 'e': 4}], 4: [(5, 5), {'w': 3}], 5: [(3, 4), {'n': 0, 's': 6}], 6: [(3, 3), {'n': 5, 'w': 11}], 7: [(2, 5), {'w': 8, 'e': 0}], 8: [(1, 5), {'e': 7}], 9: [(1, 4), {'n': 8, 's': 10}], 10: [(1, 3), {'n': 9, 'e': 11}], 11: [(2, 3), {'w': 10, 'e': 6}], 12: [(4, 6), {'w': 1, 'e': 13}], 13: [(5, 6), {'w': 12, 'n': 14}], 14: [(5, 7), {'s': 13}], 15: [(2, 6), {'e': 1, 'w': 16}], 16: [(1, 6), {'n': 17, 'e': 15}], 17: [(1, 7), {'s': 16}]}
@@ -19,10 +19,79 @@ world.loadGraph(roomGraph)
 world.printRooms()
 player = Player("Name", world.startingRoom)
 
+class Stack:
+    
+    def __init__(self):
+        self.storage = []
+
+    def push(self, item):
+        self.storage.append(item)
+
+    def pop(self):
+        if len(self.storage) > 0:
+            return self.storage.pop()
+        return None
+
+    def __len__(self):
+        return len(self.storage)
 
 # FILL THIS IN
-traversalPath = ['n', 's']
+traversalPath = []
 
+# Create dict with reverse for each direction
+reverse_directions = {'n': 's', 's': 'n', 'e':'w', 'w':'e'}
+
+# Create dict for transversal graph
+traversalGraph = {}
+
+# initialize stack
+stack = Stack()
+prevRoom = None
+last_cardinal = None
+
+# While the created traversal graph is not equal to the roomgraph
+while len(traversalGraph) < len(roomGraph):
+
+    # get player current room
+    currentRoom = player.currentRoom.id
+    
+    # if the room has not been transvered
+    if currentRoom not in traversalGraph:
+        # get all the exits in the room and set it to '?'
+        exits = {direction: '?' for direction in player.currentRoom.getExits()}
+        # add the rooms exits to the traversal room 
+        traversalGraph[currentRoom] = exits
+
+    # if there is a previous room
+    if prevRoom:
+        # update the previous room traveled cardinal to the current room id
+        traversalGraph[prevRoom][last_cardinal] = currentRoom
+        # get the reverse of the traveled cardinal
+        reverse_cardinal = reverse_directions[last_cardinal]
+        # for the current room set the reverse cardinal to the previous room
+        traversalGraph[currentRoom][reverse_cardinal] = prevRoom
+    # update the previous room tot eh current room
+    prevRoom = currentRoom
+    
+    next_room = False
+    # for the cardinals in current room 
+    for exit_cardinal, room in traversalGraph[currentRoom].items():
+        # if it is unexplored
+        if room == "?":
+            last_cardinal = exit_cardinal
+            stack.push(exit_cardinal)
+            traversalPath.append(exit_cardinal)
+            # move to next room
+            next_room = True
+            player.travel(exit_cardinal)
+            break
+    # if there was no place to go
+    if not next_room:
+        # go back the earlier moved direction
+        exit_cardinal = reverse_directions[stack.pop()]
+        traversalPath.append(exit_cardinal)
+        last_cardinal = exit_cardinal
+        player.travel(exit_cardinal)
 
 # TRAVERSAL TEST
 visited_rooms = set()
