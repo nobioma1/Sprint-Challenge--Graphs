@@ -46,8 +46,8 @@ traversalGraph = {}
 
 # initialize stack
 stack = Stack()
-prevRoom = None
-last_cardinal = None
+prev_room = None
+prev_cardinal = None
 
 # While the created traversal graph is not equal to the roomgraph
 while len(traversalGraph) < len(roomGraph):
@@ -63,34 +63,36 @@ while len(traversalGraph) < len(roomGraph):
         traversalGraph[currentRoom] = exits
 
     # if there is a previous room
-    if prevRoom:
+    if prev_room:
         # update the previous room traveled cardinal to the current room id
-        traversalGraph[prevRoom][last_cardinal] = currentRoom
+        traversalGraph[prev_room][prev_cardinal] = currentRoom
         # get the reverse of the traveled cardinal
-        reverse_cardinal = reverse_directions[last_cardinal]
+        reverse_cardinal = reverse_directions[prev_cardinal]
         # for the current room set the reverse cardinal to the previous room
-        traversalGraph[currentRoom][reverse_cardinal] = prevRoom
+        traversalGraph[currentRoom][reverse_cardinal] = prev_room
     # update the previous room tot eh current room
-    prevRoom = currentRoom
+    prev_room = currentRoom
     
-    next_room = False
+    # for each room hold if there is a movement from that room
+    movement = False
     # for the cardinals in current room 
     for exit_cardinal, room in traversalGraph[currentRoom].items():
         # if it is unexplored
         if room == "?":
-            last_cardinal = exit_cardinal
+            prev_cardinal = exit_cardinal
             stack.push(exit_cardinal)
             traversalPath.append(exit_cardinal)
             # move to next room
-            next_room = True
             player.travel(exit_cardinal)
+            # set there was a movement
+            movement = True
             break
     # if there was no place to go
-    if not next_room:
+    if not movement:
         # go back the earlier moved direction
         exit_cardinal = reverse_directions[stack.pop()]
         traversalPath.append(exit_cardinal)
-        last_cardinal = exit_cardinal
+        prev_cardinal = exit_cardinal
         player.travel(exit_cardinal)
 
 # TRAVERSAL TEST
